@@ -17,39 +17,52 @@ async function iniciarBot() {
 
   sock.ev.on("creds.update", saveCreds);
 
+  sock.ev.on("connection.update", async (update) => {
+    const { connection, lastDisconnect } = update;
+
+    if (connection === "connecting") {
+      console.log("🔄 Conectando ao WhatsApp...");
+    }
+
+    if (connection === "open") {
+      console.log("✅ CARTOMITOS BOT CONECTADO!");
+    }
+
+    if (connection === "close") {
+      const codigo =
+        lastDisconnect?.error?.output?.statusCode;
+
+      console.log("❌ Conexão fechada:", codigo);
+
+      if (codigo !== DisconnectReason.loggedOut) {
+        console.log("🔄 Tentando reconectar...");
+        setTimeout(iniciarBot, 5000);
+      }
+    }
+  });
+
+  // Gera o código somente se ainda não houver uma conta vinculada
   if (!state.creds.registered) {
     const numero = process.env.WA_NUMBER;
 
     if (!numero) {
-      console.log("❌ WA_NUMBER não foi configurado no Railway.");
+      console.log("❌ WA_NUMBER não configurado.");
       return;
     }
 
-    const codigo = await sock.requestPairingCode(numero);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 3000));
 
-    console.log("================================");
-    console.log("📱 CÓDIGO DO CARTOMITOS BOT:");
-    console.log(codigo);
-    console.log("================================");
+      const codigo = await sock.requestPairingCode(numero);
+
+      console.log("================================");
+      console.log("📱 CÓDIGO DE VINCULAÇÃO:");
+      console.log(codigo);
+      console.log("================================");
+    } catch (erro) {
+      console.error("❌ ERRO AO GERAR CÓDIGO:", erro);
+    }
   }
-
-  sock.ev.on("connection.update", ({ connection, lastDisconnect }) => {
-    if (connection === "open") {
-      console.log("✅ CARTOMITOS BOT CONECTADO AO WHATSAPP!");
-    }
-
-    if (connection === "close") {
-      const motivo =
-        lastDisconnect?.error?.output?.statusCode;
-
-      if (motivo !== DisconnectReason.loggedOut) {
-        console.log("🔄 Reconectando...");
-        iniciarBot();
-      } else {
-        console.log("❌ WhatsApp desconectado.");
-      }
-    }
-  });
 
   sock.ev.on("messages.upsert", async ({ messages }) => {
     const msg = messages[0];
@@ -61,9 +74,7 @@ async function iniciarBot() {
       msg.message.extendedTextMessage?.text ||
       "";
 
-    const comando = texto.trim().toLowerCase();
-
-    if (comando === "/start") {
+    if (texto.trim().toLowerCase() === "/start") {
       await sock.sendMessage(msg.key.remoteJid, {
         text:
 `🎯 *CARTOMITOS BOT*
@@ -77,9 +88,7 @@ async function iniciarBot() {
 /parcial
 /ranking
 /geral
-/regras
-
-🔥 Boa sorte a todos!`
+/regras`
       });
     }
   });
