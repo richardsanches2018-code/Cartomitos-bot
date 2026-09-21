@@ -17,6 +17,22 @@ async function iniciarBot() {
 
   sock.ev.on("creds.update", saveCreds);
 
+  if (!state.creds.registered) {
+    const numero = process.env.WA_NUMBER;
+
+    if (!numero) {
+      console.log("❌ WA_NUMBER não foi configurado no Railway.");
+      return;
+    }
+
+    const codigo = await sock.requestPairingCode(numero);
+
+    console.log("================================");
+    console.log("📱 CÓDIGO DO CARTOMITOS BOT:");
+    console.log(codigo);
+    console.log("================================");
+  }
+
   sock.ev.on("connection.update", ({ connection, lastDisconnect }) => {
     if (connection === "open") {
       console.log("✅ CARTOMITOS BOT CONECTADO AO WHATSAPP!");
@@ -27,7 +43,7 @@ async function iniciarBot() {
         lastDisconnect?.error?.output?.statusCode;
 
       if (motivo !== DisconnectReason.loggedOut) {
-        console.log("🔄 Conexão perdida. Reconectando...");
+        console.log("🔄 Reconectando...");
         iniciarBot();
       } else {
         console.log("❌ WhatsApp desconectado.");
