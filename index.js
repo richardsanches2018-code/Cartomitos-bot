@@ -11,14 +11,15 @@ async function iniciarBot() {
 
   const sock = makeWASocket({
     auth: state,
-    logger: pino({ level: "silent" })
+    logger: pino({ level: "silent" }),
+    printQRInTerminal: false
   });
 
   sock.ev.on("creds.update", saveCreds);
 
   sock.ev.on("connection.update", ({ connection, lastDisconnect }) => {
     if (connection === "open") {
-      console.log("✅ CARTOMITOS BOT CONECTADO!");
+      console.log("✅ CARTOMITOS BOT CONECTADO AO WHATSAPP!");
     }
 
     if (connection === "close") {
@@ -26,7 +27,7 @@ async function iniciarBot() {
         lastDisconnect?.error?.output?.statusCode;
 
       if (motivo !== DisconnectReason.loggedOut) {
-        console.log("🔄 Reconectando...");
+        console.log("🔄 Conexão perdida. Reconectando...");
         iniciarBot();
       } else {
         console.log("❌ WhatsApp desconectado.");
@@ -53,7 +54,7 @@ async function iniciarBot() {
 
 🏆 Bem-vindo ao nosso bolão!
 
-📋 Comandos disponíveis:
+📋 Comandos:
 
 /cartela
 /meupalpite
